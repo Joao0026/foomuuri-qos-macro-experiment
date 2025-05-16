@@ -1,0 +1,207 @@
+# ============================================================
+# Ficheiro: /etc/foomuuri/foomuuri.conf
+# Descrição: QoS via Macros  para o script qos_engine_macro.py.
+# ============================================================
+
+zone {
+	localhost
+	public		enp1s0 enp8s0
+	internal	enp7s0
+}
+foomuuri {
+	rpfilter -enp1s0 -enp8s0
+}
+
+macro {
+	webapp8443		tcp 8443 ; udp 8443
+	iperf5201		tcp 5201 ; udp 5201 # Usado para testes de bulk
+}
+
+snat {
+	saddr 192.168.100.0/24 oifname enp1s0 masquerade
+	saddr 192.168.100.0/24 oifname enp8s0 masquerade
+}
+dnat {
+	iifname enp1s0 tcp dport 80 dnat to 192.168.100.10:80
+	iifname enp8s0 tcp dport 8080 dnat to 192.168.100.10:8080
+}
+hook {
+	post_start /usr/bin/python3 /etc/foomuuri/qos/qos_engine_macro.py --start --config-file /etc/foomuuri/foomuuri.conf
+	pre_stop /usr/bin/python3 /etc/foomuuri/qos/qos_engine_macro.py --stop --config-file /etc/foomuuri/foomuuri.conf
+}
+target isp1 {
+	command		fping --iface enp1s0	8.8.8.8
+	command_up	/etc/foomuuri/multi-isp	up	1
+	command_down	/etc/foomuuri/multi-isp	down	1
+}
+target isp2 {
+	command		fping --iface enp8s0	8.8.4.4
+	command_up	/etc/foomuuri/multi-isp	up	2
+	command_down	/etc/foomuuri/multi-isp	down	2
+}
+
+# --- Macros para Configuração QoS ---
+macro {
+	# Interface WAN1 (enp1s0 / ifb_isp1)
+	QOS_IF_ENP1S0_NAME			"enp1s0"
+	QOS_IF_ENP1S0_IFB			"ifb_isp1"
+	QOS_IF_ENP1S0_TOTAL_UPLOAD_BW		"50Mbit"
+	QOS_IF_ENP1S0_TOTAL_DOWNLOAD_BW		"200Mbit"
+	QOS_IF_ENP1S0_DEFAULT_UPLOAD_ID		"1:30"
+	QOS_IF_ENP1S0_DEFAULT_UPLOAD_PRIO	"7"
+	QOS_IF_ENP1S0_DEFAULT_UPLOAD_RATE	"256kbit"
+	QOS_IF_ENP1S0_DEFAULT_UPLOAD_CEIL	"1Mbit"
+	QOS_IF_ENP1S0_DEFAULT_DOWNLOAD_ID	"1:30"
+	QOS_IF_ENP1S0_DEFAULT_DOWNLOAD_PRIO	"7"
+	QOS_IF_ENP1S0_DEFAULT_DOWNLOAD_RATE	"512kbit"
+	QOS_IF_ENP1S0_DEFAULT_DOWNLOAD_CEIL	"2Mbit"
+
+	# Interface WAN2 (enp8s0 / ifb_isp2)
+	QOS_IF_ENP8S0_NAME			"enp8s0"
+	QOS_IF_ENP8S0_IFB			"ifb_isp2"
+	QOS_IF_ENP8S0_TOTAL_UPLOAD_BW		"10Mbit"
+	QOS_IF_ENP8S0_TOTAL_DOWNLOAD_BW		"50Mbit"
+	QOS_IF_ENP8S0_DEFAULT_UPLOAD_ID		"1:30"
+	QOS_IF_ENP8S0_DEFAULT_UPLOAD_PRIO	"7"
+	QOS_IF_ENP8S0_DEFAULT_UPLOAD_RATE	"128kbit"
+	QOS_IF_ENP8S0_DEFAULT_UPLOAD_CEIL	"512kbit"
+	QOS_IF_ENP8S0_DEFAULT_DOWNLOAD_ID	"1:30"
+	QOS_IF_ENP8S0_DEFAULT_DOWNLOAD_PRIO	"7"
+	QOS_IF_ENP8S0_DEFAULT_DOWNLOAD_RATE	"256kbit"
+	QOS_IF_ENP8S0_DEFAULT_DOWNLOAD_CEIL	"1Mbit"
+
+	# Lista de Nomes de Perfis QoS (nomes base que o script usará com QOS_SRV_)
+	QOS_SERVICE_LIST	"http ssh https webapp_custom bulk_traffic"
+
+	# Perfil "http"
+	QOS_SRV_http_MARK				"0x10"
+	QOS_SRV_http_PRIORITY				"5"
+	QOS_SRV_http_UPLOAD_SUFFIX			"89"
+	QOS_SRV_http_UPLOAD_RATE_DEFAULT		"1Mbit"
+	QOS_SRV_http_UPLOAD_CEIL_DEFAULT		"5Mbit"
+	QOS_SRV_http_UPLOAD_FILTER_PRIO_DEFAULT		"10"
+	QOS_SRV_http_DOWNLOAD_SUFFIX			"89"
+	QOS_SRV_http_DOWNLOAD_RATE_DEFAULT		"2Mbit"
+	QOS_SRV_http_DOWNLOAD_CEIL_DEFAULT		"10Mbit"
+	QOS_SRV_http_DOWNLOAD_FILTER_PRIO_DEFAULT	"15"
+	# Overrides HTTP
+	QOS_SRV_http_OVERRIDE_ENP1S0_UPLOAD_RATE	"2Mbit"
+	QOS_SRV_http_OVERRIDE_ENP1S0_UPLOAD_CEIL	"8Mbit"
+	QOS_SRV_http_OVERRIDE_IFB_ISP1_DOWNLOAD_RATE	"10Mbit"
+	QOS_SRV_http_OVERRIDE_IFB_ISP1_DOWNLOAD_CEIL	"75Mbit"
+	QOS_SRV_http_OVERRIDE_ENP8S0_UPLOAD_RATE	"500kbit"
+	QOS_SRV_http_OVERRIDE_ENP8S0_UPLOAD_CEIL	"1Mbit"
+	QOS_SRV_http_OVERRIDE_IFB_ISP2_DOWNLOAD_RATE	"1Mbit"
+	QOS_SRV_http_OVERRIDE_IFB_ISP2_DOWNLOAD_CEIL	"5Mbit"
+
+	# Perfil "ssh" corrigido
+	QOS_SRV_ssh_MARK                "0x01"  # Padronizado para 2 dígitos
+	QOS_SRV_ssh_PRIORITY            "1"	
+	QOS_SRV_ssh_UPLOAD_SUFFIX       "5"
+	QOS_SRV_ssh_UPLOAD_RATE_DEFAULT     "1Mbit"
+	QOS_SRV_ssh_UPLOAD_CEIL_DEFAULT     "5Mbit"
+	QOS_SRV_ssh_UPLOAD_FILTER_PRIO_DEFAULT "5"
+	QOS_SRV_ssh_DOWNLOAD_SUFFIX     "5"
+	QOS_SRV_ssh_DOWNLOAD_RATE_DEFAULT   "512kbit"
+	QOS_SRV_ssh_DOWNLOAD_CEIL_DEFAULT   "2Mbit"
+	QOS_SRV_ssh_DOWNLOAD_FILTER_PRIO_DEFAULT "5"
+	# Adicionar overrides se necessário
+	QOS_SRV_ssh_OVERRIDE_ENP1S0_UPLOAD_RATE "1Mbit"
+	QOS_SRV_ssh_OVERRIDE_ENP1S0_UPLOAD_CEIL "3Mbit"
+
+	# Perfil "https"
+	QOS_SRV_https_MARK				"0x20" # CORRIGIDO
+	QOS_SRV_https_PRIORITY				"4"
+	QOS_SRV_https_UPLOAD_SUFFIX			"81"
+	QOS_SRV_https_UPLOAD_RATE_DEFAULT		"5Mbit"
+	QOS_SRV_https_UPLOAD_CEIL_DEFAULT		"25Mbit"
+	QOS_SRV_https_UPLOAD_FILTER_PRIO_DEFAULT	"10"
+	QOS_SRV_https_DOWNLOAD_SUFFIX			"81"
+	QOS_SRV_https_DOWNLOAD_RATE_DEFAULT		"20Mbit"
+	QOS_SRV_https_DOWNLOAD_CEIL_DEFAULT		"100Mbit"
+	QOS_SRV_https_DOWNLOAD_FILTER_PRIO_DEFAULT	"14"
+
+	# Perfil "webapp_custom"
+	QOS_SRV_webapp_custom_MARK			"0x40" # CORRIGIDO
+	QOS_SRV_webapp_custom_PRIORITY			"2"
+	QOS_SRV_webapp_custom_UPLOAD_SUFFIX		"40"
+	QOS_SRV_webapp_custom_UPLOAD_RATE_DEFAULT	"4Mbit"
+	QOS_SRV_webapp_custom_UPLOAD_CEIL_DEFAULT	"15Mbit"
+	QOS_SRV_webapp_custom_UPLOAD_FILTER_PRIO_DEFAULT	"6"
+	QOS_SRV_webapp_custom_DOWNLOAD_SUFFIX		"40"
+	QOS_SRV_webapp_custom_DOWNLOAD_RATE_DEFAULT	"4Mbit"
+	QOS_SRV_webapp_custom_DOWNLOAD_CEIL_DEFAULT	"15Mbit"
+	QOS_SRV_webapp_custom_DOWNLOAD_FILTER_PRIO_DEFAULT	"6"
+
+	# Perfil "bulk_traffic"
+	QOS_SRV_bulk_traffic_MARK			"0x50" # CORRIGIDO
+	QOS_SRV_bulk_traffic_PRIORITY			"6"
+	QOS_SRV_bulk_traffic_UPLOAD_SUFFIX		"50"
+	QOS_SRV_bulk_traffic_UPLOAD_RATE_DEFAULT	"500kbit"
+	QOS_SRV_bulk_traffic_UPLOAD_CEIL_DEFAULT	"3Mbit"
+	QOS_SRV_bulk_traffic_UPLOAD_FILTER_PRIO_DEFAULT "10"
+	QOS_SRV_bulk_traffic_DOWNLOAD_SUFFIX		"50"
+	QOS_SRV_bulk_traffic_DOWNLOAD_RATE_DEFAULT	"1Mbit"
+	QOS_SRV_bulk_traffic_DOWNLOAD_CEIL_DEFAULT	"4Mbit"
+	QOS_SRV_bulk_traffic_DOWNLOAD_FILTER_PRIO_DEFAULT "15"
+	# Overrides para BULK
+	QOS_SRV_bulk_traffic_OVERRIDE_ENP1S0_UPLOAD_RATE "200kbit"
+	QOS_SRV_bulk_traffic_OVERRIDE_ENP1S0_UPLOAD_CEIL "1Mbit"
+	QOS_SRV_bulk_traffic_OVERRIDE_IFB_ISP1_DOWNLOAD_RATE "500kbit"
+	QOS_SRV_bulk_traffic_OVERRIDE_IFB_ISP1_DOWNLOAD_CEIL "2Mbit"
+}
+
+# --- Regras Firewall Zona-Zona ---
+localhost-public {
+	http mark_set 0x10 -conntrack
+	ssh mark_set 0x01 -conntrack
+	https mark_set 0x20 -conntrack
+	webapp8443 mark_set 0x40 -conntrack
+	iperf5201 mark_set 0x50 -conntrack
+	mark_set 0xff continue -conntrack
+	ssh accept
+	ping accept
+	reject log
+}
+
+internal-public {
+	http mark_set 0x10 -conntrack
+	ssh mark_set 0x01 -conntrack
+	https mark_set 0x20 -conntrack
+	webapp8443 mark_set 0x40 -conntrack
+	iperf5201 mark_set 0x50 -conntrack
+	mark_set 0xff continue -conntrack
+	
+	ssh accept	
+	ping accept
+	reject log
+}
+
+
+public-internal {
+	dhcp-client accept
+	dhcp-server accept
+	ssh accept
+	ct_status dnat accept
+	drop log
+}
+
+localhost-internal {
+	dhcp-client accept
+	udp 53 accept
+	tcp 53 accept
+	http accept
+	https accept
+	ntp accept
+	ping accept
+	smtp accept
+	ssh accept
+	reject log
+}
+
+internal-localhost {
+	ping accept
+	dhcp-server accept
+	http accept
+
+}
