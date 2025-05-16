@@ -66,7 +66,7 @@ The main goal was to see if a complete QoS policy, including:
 * `foomuuri.conf`: An example of the `/etc/foomuuri/foomuuri.conf` file containing all the QoS parameter macros.
 * `qos_engine_macro.py`: The Python script designed to parse the macros in the above `foomuuri.conf` and apply `tc` rules.
 
-## How to (Hypothetically) Test
+## How to Test
 
 1.  **Backup your existing Foomuuri setup.**
 2.  Place `qos_engine_macro.py` in `/etc/foomuuri/qos/` and make it executable.
