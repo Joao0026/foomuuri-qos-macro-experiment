@@ -2,7 +2,7 @@
 
 This repository contains an experimental setup to explore configuring a complex Quality of Service (QoS) policy for [Foomuuri Firewall](https://github.com/FoobarOy/foomuuri) by defining all parameters as macros directly within the `foomuuri.conf` file. The QoS rules are then applied by a Python script (`qos_engine_macro.py`) that parses these macros.
 
-**DISCLAIMER: This is a Proof-of-Concept / Experimental Approach!**
+**DISCLAIMER: This is a Experimental Approach!**
 
 This method was developed to explore the feasibility of a single-file configuration for both Foomuuri firewall rules and its QoS policy, as per a suggestion.
 
