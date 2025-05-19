@@ -14,7 +14,7 @@ The main goal was to see if a complete QoS policy, including:
 * Service-specific QoS classes (linked to Foomuuri marks) with `rate`, `ceil`, and `priority`
 * Per-interface overrides for these service-specific limits
 
-...could be defined solely using Foomuuri macros and then parsed and applied by a Python script.
+Could be defined solely using Foomuuri macros and then parsed and applied by a Python script.
 
 ## How It (Conceptually) Works
 
